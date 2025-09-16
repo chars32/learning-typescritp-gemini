@@ -4,6 +4,8 @@
 const form = document.getElementById('new-task-form');
 const input = document.getElementById('new-task-input');
 const taskList = document.getElementById('task-list');
+// Array para almacenar nuestras tareas
+const tasks = []; // Declaramos que 'tasks' será un array de objetos 'Task'
 // Verificamos que los elementos existan (buena práctica para evitar errores en runtime)
 if (!form || !input || !taskList) {
     console.error('No se pudieron encontrar todos los elementos del DOM necesarios.');
