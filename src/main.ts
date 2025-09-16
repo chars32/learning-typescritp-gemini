@@ -44,3 +44,47 @@ if (!form || !input || !taskList) {
         input.value = '';
     });
 }
+
+// Función para renderizar una tarea en el DOM
+function renderTask(task: Task): void {
+    const listItem = document.createElement('li');
+    listItem.classList.add('task-item'); // Añadimos una clase para estilos
+
+    // Si la tarea está completada, añadimos una clase
+    if (task.completed) {
+        listItem.classList.add('completed');
+    }
+
+    // Checkbox para completar/descompletar
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = task.completed;
+    checkbox.addEventListener('change', () => {
+        task.completed = checkbox.checked; // Actualizar el estado de la tarea
+        listItem.classList.toggle('completed', task.completed); // Toggle de la clase visual
+        // Aquí podrías añadir lógica para persistir el estado (localStorage)
+    });
+
+    // Texto de la tarea
+    const taskText = document.createElement('span');
+    taskText.textContent = task.description;
+
+    // Botón para eliminar la tarea
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Eliminar';
+    deleteButton.addEventListener('click', () => {
+        // Eliminar del DOM
+        taskList.removeChild(listItem);
+        // Eliminar del array (filtrando el array para excluir la tarea eliminada)
+        const taskIndex = tasks.findIndex(t => t.id === task.id);
+        if (taskIndex !== -1) {
+            tasks.splice(taskIndex, 1);
+        }
+        // Aquí podrías añadir lógica para persistir los cambios (localStorage)
+    });
+
+    listItem.appendChild(checkbox);
+    listItem.appendChild(taskText);
+    listItem.appendChild(deleteButton);
+    taskList.appendChild(listItem);
+}
