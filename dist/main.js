@@ -26,6 +26,7 @@ else {
             completed: false,
         };
         tasks.push(newTask); //Añadir la nueva tarea al array
+        saveTasks(); // Función para persistir el estado (localStorage)
         renderTask(newTask); // Renderizar la nueva tarea del DOM
         input.value = '';
     });
@@ -45,7 +46,7 @@ function renderTask(task) {
     checkbox.addEventListener('change', () => {
         task.completed = checkbox.checked; // Actualizar el estado de la tarea
         listItem.classList.toggle('completed', task.completed); // Toggle de la clase visual
-        // Aquí podrías añadir lógica para persistir el estado (localStorage)
+        saveTasks(); // Función para persistir el estado (localStorage)
     });
     // Texto de la tarea
     const taskText = document.createElement('span');
@@ -61,12 +62,29 @@ function renderTask(task) {
         if (taskIndex !== -1) {
             tasks.splice(taskIndex, 1);
         }
-        // Aquí podrías añadir lógica para persistir los cambios (localStorage)
+        saveTasks(); // Función para persistir el estado (localStorage)
     });
     listItem.appendChild(checkbox);
     listItem.appendChild(taskText);
     listItem.appendChild(deleteButton);
     taskList.appendChild(listItem);
 }
+// Función para guardar tareas en localStorage
+function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+// Función para cargar tareas desde localStorage
+function loadTasks() {
+    const storedTasks = localStorage.getItem('tasks');
+    if (storedTasks) {
+        // Parsear el JSON y asegurar que el array es de tipo Task[]
+        const parsedTasks = JSON.parse(storedTasks);
+        tasks.push(...parsedTasks); // Añadir todas las tareas cargadas al array 'tasks'
+        // Renderizar todas las tareas cargadas
+        tasks.forEach(task => renderTask(task));
+    }
+}
+// Llamar a loadTasks al cargar la aplicación
+loadTasks();
 export {};
 //# sourceMappingURL=main.js.map
