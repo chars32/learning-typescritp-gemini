@@ -87,11 +87,19 @@ h1 {
 }
 
 #task-list li button:hover {
-    background-color: #c82333;
+    background-color: #ae1d2b;
 }
 
 #task-list li input[type="checkbox"] {
     margin-right: 10px;
     width: 18px;
     height: 18px;
+}
+
+.edit-btn:hover {
+    background-color: #21b446 !important;
+}
+
+.edit-btn {
+    background-color: #29ca51 !important;
 }

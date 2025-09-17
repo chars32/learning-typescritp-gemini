@@ -1,90 +1,195 @@
-// src/main.ts
-// Obtener referencias a los elementos del DOM
-// Usamos el operador "as" para aegurar a TypeScript el tipo de elemento HTML
-const form = document.getElementById('new-task-form');
-const input = document.getElementById('new-task-input');
+// ============================================================================
+// 1. INTERFACES Y TIPOS
+// ============================================================================
+/**
+ * Define los tipos de filtro posibles para una mejor legibilidad del código.
+ */
+var FilterType;
+(function (FilterType) {
+    FilterType[FilterType["All"] = 0] = "All";
+    FilterType[FilterType["Completed"] = 1] = "Completed";
+    FilterType[FilterType["Pending"] = 2] = "Pending";
+})(FilterType || (FilterType = {}));
+// ============================================================================
+// 2. ESTADO DE LA APLICACIÓN
+// ============================================================================
+// El array que contendrá todas nuestras tareas. Se inicializa desde localStorage.
+let tasks = loadTasks();
+// Variable para mantener el estado del filtro actual, por defecto muestra todas.
+let currentFilter = FilterType.All;
+// ============================================================================
+// 3. REFERENCIAS A ELEMENTOS DEL DOM
+// ============================================================================
+// Referencia al formulario para agregar nuevas tareas.
+const taskForm = document.getElementById('new-task-form');
+// Referencia al input donde se escribe la nueva tarea.
+const taskInput = document.getElementById('new-task-input');
+// Referencia a la lista <ul> donde se mostrarán las tareas.
 const taskList = document.getElementById('task-list');
-// Array para almacenar nuestras tareas
-const tasks = []; // Declaramos que 'tasks' será un array de objetos 'Task'
-// Verificamos que los elementos existan (buena práctica para evitar errores en runtime)
-if (!form || !input || !taskList) {
-    console.error('No se pudieron encontrar todos los elementos del DOM necesarios.');
-    // Podrías deshabilitar el formulario o mostrar un mensaje al usuario
-}
-else {
-    // Aquí es donde añadiremos la lógica de nuestra aplicación
-    // Manejar el envio de formulario
-    form.addEventListener('submit', (event) => {
-        event.preventDefault(); // Prevenir el comportamiento por defecto del formulario (recargar la pagina)
-        const description = input.value.trim(); // Obtener el valor del input y eiiminar espacios en blanco
-        if (description === '') {
-            return; // No añadir tareas vacías 
+// Referencias a los botones de filtro.
+const filterAllBtn = document.getElementById('filter-all');
+const filterCompletedBtn = document.getElementById('filter-completed');
+const filterPendingBtn = document.getElementById('filter-pending');
+// ============================================================================
+// 4. FUNCIONES PRINCIPALES
+// ============================================================================
+/**
+ * Renderiza (dibuja) la lista de tareas en el DOM.
+ * Aplica el filtro actual antes de mostrar las tareas.
+ */
+function renderTasks() {
+    // Limpia la lista actual para evitar duplicados al re-renderizar.
+    taskList.innerHTML = '';
+    // Filtra el array de tareas basándose en el `currentFilter`.
+    const filteredTasks = tasks.filter(task => {
+        if (currentFilter === FilterType.Completed) {
+            return task.completed;
         }
-        const newTask = {
-            id: new Date().getTime().toString(), // Generar un ID único simple
-            description: description,
-            completed: false,
-        };
-        tasks.push(newTask); //Añadir la nueva tarea al array
-        saveTasks(); // Función para persistir el estado (localStorage)
-        renderTask(newTask); // Renderizar la nueva tarea del DOM
-        input.value = '';
+        if (currentFilter === FilterType.Pending) {
+            return !task.completed;
+        }
+        // Si el filtro es 'All', no se filtra nada y se retorna true para todos.
+        return true;
     });
+    // Itera sobre el array ya filtrado para crear los elementos <li>.
+    filteredTasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = task.completed ? 'completed' : '';
+        // Checkbox para marcar/desmarcar la tarea.
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.completed;
+        checkbox.addEventListener('change', () => toggleTaskCompletion(task.id));
+        // Span para el texto de la tarea.
+        const textSpan = document.createElement('span');
+        textSpan.textContent = task.description;
+        // Botón para editar la tarea.
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Editar';
+        editButton.className = 'edit-btn';
+        editButton.addEventListener('click', () => {
+            const newDescription = prompt('Edita tu tarea:', task.description);
+            if (newDescription !== null && newDescription.trim() !== '') {
+                updateTaskDescription(task.id, newDescription);
+            }
+        });
+        // Botón para eliminar la tarea.
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Eliminar';
+        deleteButton.addEventListener('click', () => deleteTask(task.id));
+        // Añade todos los elementos al <li>.
+        li.appendChild(checkbox);
+        li.appendChild(textSpan);
+        li.appendChild(editButton);
+        li.appendChild(deleteButton);
+        // Añade el <li> a la lista <ul>.
+        taskList.appendChild(li);
+    });
+    // Actualiza el estilo visual de los botones de filtro.
+    updateFilterButtons();
 }
-// Función para renderizar una tarea en el DOM
-function renderTask(task) {
-    const listItem = document.createElement('li');
-    listItem.classList.add('task-item'); // Añadimos una clase para estilos
-    // Si la tarea está completada, añadimos una clase
-    if (task.completed) {
-        listItem.classList.add('completed');
+/**
+ * Agrega una nueva tarea a la lista.
+ * @param description - El texto de la nueva tarea.
+ */
+function addTask(description) {
+    const newTask = {
+        id: crypto.randomUUID(), // Genera un ID único.
+        description: description,
+        completed: false
+    };
+    tasks.push(newTask);
+    saveTasks();
+    renderTasks();
+}
+/**
+ * Elimina una tarea de la lista por su ID.
+ * @param id - El ID de la tarea a eliminar.
+ */
+function deleteTask(id) {
+    tasks = tasks.filter(task => task.id !== id);
+    saveTasks();
+    renderTasks();
+}
+/**
+ * Cambia el estado 'completed' de una tarea.
+ * @param id - El ID de la tarea a modificar.
+ */
+function toggleTaskCompletion(id) {
+    const task = tasks.find(task => task.id === id);
+    if (task) {
+        task.completed = !task.completed;
+        saveTasks();
+        renderTasks();
     }
-    // Checkbox para completar/descompletar
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = task.completed;
-    checkbox.addEventListener('change', () => {
-        task.completed = checkbox.checked; // Actualizar el estado de la tarea
-        listItem.classList.toggle('completed', task.completed); // Toggle de la clase visual
-        saveTasks(); // Función para persistir el estado (localStorage)
-    });
-    // Texto de la tarea
-    const taskText = document.createElement('span');
-    taskText.textContent = task.description;
-    // Botón para eliminar la tarea
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Eliminar';
-    deleteButton.addEventListener('click', () => {
-        // Eliminar del DOM
-        taskList.removeChild(listItem);
-        // Eliminar del array (filtrando el array para excluir la tarea eliminada)
-        const taskIndex = tasks.findIndex(t => t.id === task.id);
-        if (taskIndex !== -1) {
-            tasks.splice(taskIndex, 1);
-        }
-        saveTasks(); // Función para persistir el estado (localStorage)
-    });
-    listItem.appendChild(checkbox);
-    listItem.appendChild(taskText);
-    listItem.appendChild(deleteButton);
-    taskList.appendChild(listItem);
 }
-// Función para guardar tareas en localStorage
+/**
+ * Actualiza la descripción de una tarea.
+ * @param id - El ID de la tarea a actualizar.
+ * @param newDescription - El nuevo texto para la descripción.
+ */
+function updateTaskDescription(id, newDescription) {
+    const task = tasks.find(task => task.id === id);
+    if (task) {
+        task.description = newDescription.trim();
+        saveTasks();
+        renderTasks();
+    }
+}
+/**
+ * Actualiza la clase 'active' en los botones de filtro.
+ */
+function updateFilterButtons() {
+    filterAllBtn.classList.toggle('active', currentFilter === FilterType.All);
+    filterCompletedBtn.classList.toggle('active', currentFilter === FilterType.Completed);
+    filterPendingBtn.classList.toggle('active', currentFilter === FilterType.Pending);
+}
+// ============================================================================
+// 5. LOCALSTORAGE (PERSISTENCIA DE DATOS)
+// ============================================================================
+/**
+ * Guarda el array de tareas actual en el Local Storage.
+ */
 function saveTasks() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
 }
-// Función para cargar tareas desde localStorage
+/**
+ * Carga las tareas desde el Local Storage.
+ * @returns Un array de tareas o un array vacío si no hay nada guardado.
+ */
 function loadTasks() {
-    const storedTasks = localStorage.getItem('tasks');
-    if (storedTasks) {
-        // Parsear el JSON y asegurar que el array es de tipo Task[]
-        const parsedTasks = JSON.parse(storedTasks);
-        tasks.push(...parsedTasks); // Añadir todas las tareas cargadas al array 'tasks'
-        // Renderizar todas las tareas cargadas
-        tasks.forEach(task => renderTask(task));
-    }
+    const tasksJson = localStorage.getItem('tasks');
+    return tasksJson ? JSON.parse(tasksJson) : [];
 }
-// Llamar a loadTasks al cargar la aplicación
-loadTasks();
+// ============================================================================
+// 6. EVENT LISTENERS
+// ============================================================================
+// Listener para el envío del formulario.
+taskForm.addEventListener('submit', (event) => {
+    event.preventDefault(); // Evita que la página se recargue.
+    const newDescription = taskInput.value.trim();
+    if (newDescription) {
+        addTask(newDescription);
+        taskInput.value = ''; // Limpia el input después de agregar.
+    }
+});
+// Listeners para los botones de filtro.
+filterAllBtn.addEventListener('click', () => {
+    currentFilter = FilterType.All;
+    renderTasks();
+});
+filterCompletedBtn.addEventListener('click', () => {
+    currentFilter = FilterType.Completed;
+    renderTasks();
+});
+filterPendingBtn.addEventListener('click', () => {
+    currentFilter = FilterType.Pending;
+    renderTasks();
+});
+// ============================================================================
+// 7. INICIALIZACIÓN
+// ============================================================================
+// Renderiza las tareas por primera vez cuando el script se carga.
+renderTasks();
 export {};
 //# sourceMappingURL=main.js.map
