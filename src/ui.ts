@@ -44,9 +44,15 @@ export function renderTasks(): void {
         editButton.className = 'edit-btn';
         editButton.addEventListener('click', () => {
             const newDescription = prompt('Edita tu tarea:', task.description);
-            if (newDescription !== null && newDescription.trim() !== '') {
-                updateTaskDescription(task.id, newDescription);
-                renderTasks();
+            // Validamos que el usuario no haya cancelado el prompt
+            if (newDescription !== null) {
+                const errorMessage = updateTaskDescription(task.id, newDescription); // Capturamos el error
+
+                if (errorMessage) {
+                    alert(errorMessage); // Mostramos el error
+                } else {
+                    renderTasks(); // Si todo ok, re-renderizamos
+                }
             }
         });
 

@@ -20,10 +20,17 @@ taskForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const newDescription = taskInput.value.trim();
 
+    // La validación básica de que no esté vacío se mantiene aquí
+    // para no llamar a la lógica de estado innecesariamente.
     if (newDescription) {
-        addTask(newDescription); // Llama a la función del módulo de estado
-        taskInput.value = '';
-        renderTasks(); // Llama a la función del módulo de UI para actualizar la vista
+        const errorMessage = addTask(newDescription); // Capturamos el posible error
+
+        if (errorMessage) {
+            alert(errorMessage); // Si hay error, lo mostramos
+        } else {
+            taskInput.value = ''; // Si no, limpiamos el input
+            renderTasks();      // y re-renderizamos
+        }
     }
 });
 

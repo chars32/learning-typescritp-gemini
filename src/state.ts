@@ -1,5 +1,6 @@
 import { type Task, FilterType } from './models'; // Importamos nuestros tipos
 import { saveTasks, loadTasks } from './storage'; // Importamos las funciones de almacenamiento
+import { validateDescription } from './validation'; // 1. Importamos la función
 
 // El estado de la aplicación vive aquí.
 let tasks: Task[] = loadTasks(); // Se inicializa desde el localStorage
@@ -11,14 +12,25 @@ export const getCurrentFilter = () => currentFilter;
 
 // Funciones para "modificar" el estado (lógica de negocio).
 
-export function addTask(description: string): void {
+/**
+ * 2. Modificamos addTask para que valide y devuelva un posible error.
+ * @param description - La descripción de la nueva tarea.
+ * @returns Un mensaje de error si la validación falla, de lo contrario null.
+ */
+export function addTask(description: string): string | null {
+    const validation = validateDescription(description);
+    if (!validation.isValid) {
+        return validation.message || 'Error de validación desconocido.';
+    }
+
     const newTask: Task = {
         id: crypto.randomUUID(),
-        description,
+        description: description.trim(),
         completed: false
     };
     tasks.push(newTask);
-    saveTasks(tasks); // Guardamos el nuevo estado
+    saveTasks(tasks);
+    return null; // Éxito, no hay error
 }
 
 export function deleteTask(id: string): void {
@@ -34,12 +46,24 @@ export function toggleTaskCompletion(id: string): void {
     }
 }
 
-export function updateTaskDescription(id: string, newDescription: string): void {
+/**
+ * 3. Modificamos updateTaskDescription de la misma manera.
+ * @param id - El ID de la tarea a actualizar.
+ * @param newDescription - La nueva descripción.
+ * @returns Un mensaje de error o null.
+ */
+export function updateTaskDescription(id: string, newDescription: string): string | null {
+    const validation = validateDescription(newDescription);
+    if (!validation.isValid) {
+        return validation.message || 'Error de validación desconocido.';
+    }
+
     const task = tasks.find(task => task.id === id);
     if (task) {
         task.description = newDescription.trim();
         saveTasks(tasks);
     }
+    return null; // Éxito
 }
 
 export function setFilter(filter: FilterType): void {
